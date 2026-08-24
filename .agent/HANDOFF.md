@@ -4,7 +4,7 @@
 
 # 当前状态
 
-开发态实现与验证均已完成，开发内容已提交到本地 `mcpp` 分支（实现提交 `093e826`）。向 `origin/mcpp` 推送时因当前 GitHub 账号无上游写权限而失败；音频授权确认和发布包资源注入按用户要求延后。
+开发态实现与验证均已完成，开发内容已提交并推送到 `helantianshen/mcpp` fork 的 `mcpp` 分支（实现提交 `093e826`）；音频授权确认和发布包资源注入按用户要求延后。
 
 # 已完成工作
 
@@ -45,12 +45,12 @@
 - 当前发布工作流尚未把 MP3 放入 `<安装根>/share/mcpp/niulai/`，因此只有源码/开发构建可直接找到原声；缺少资源时会安全回退 TTS。
 - 已在 WSL + Windows MediaPlayer 实听；原生 Windows、macOS 和普通 Linux 播放器仍需对应平台验证。
 - 当前 PATH 中的 mcpp shim 指向不存在的 2026.8.17.1；本次直接使用已安装的 2026.8.11.2 引导器，未修改用户全局配置。
-- `origin` 是 `mcpp-community/mcpp`，当前账号 `helantianshen` 推送返回 403；该账号下也不存在 `helantianshen/mcpp` fork。
+- `origin` 保持指向 `mcpp-community/mcpp`；`fork` 指向 `helantianshen/mcpp`，本地 `mcpp` 跟踪 `fork/mcpp`。
 
 # 剩余工作
 
-远程上传仍需一个可写 remote（授予上游权限或创建 fork）。发布前还需要取得音频许可、将三份 MP3 注入各平台发布包，并补发布包内资源存在性冒烟测试。
+发布前需要取得音频许可、将三份 MP3 注入各平台发布包，并补发布包内资源存在性冒烟测试。
 
 # 推荐下一步
 
-获得可写 remote 后推送本地 `mcpp` 分支；不要在未获单独授权时创建 PR。准备发布时联系 https://github.com/whitefirer，然后完善 release 打包与各平台实听。
+审阅 `https://github.com/helantianshen/mcpp/tree/mcpp`；不要在未获单独授权时创建 PR。准备发布时联系 https://github.com/whitefirer，然后完善 release 打包与各平台实听。
