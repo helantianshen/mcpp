@@ -21,6 +21,7 @@ import mcpp.dyndep;
 import mcpp.log;
 import mcpp.project;
 import mcpp.manifest;
+import mcpp.platform.niulai;
 import mcpp.ui;
 
 namespace mcpp::cli {
@@ -42,7 +43,7 @@ workspace_fanout_members(bool wantAll, const std::string& package_filter) {
     return std::nullopt;
 }
 
-export int cmd_build(const mcpplibs::cmdline::ParsedArgs& parsed) {
+int cmd_build_impl(const mcpplibs::cmdline::ParsedArgs& parsed) {
     bool verbose  = parsed.is_flag_set("verbose") || mcpp::log::is_verbose();
     bool print_fp = parsed.is_flag_set("print-fingerprint");
     bool no_cache = parsed.is_flag_set("no-cache");
@@ -148,6 +149,24 @@ export int cmd_build(const mcpplibs::cmdline::ParsedArgs& parsed) {
     if (!ctx) { std::println(stderr, "error: {}", ctx.error()); return 2; }
 
     return mcpp::build::run_build_plan(*ctx, verbose, no_cache, ov.target_triple);
+}
+
+export int cmd_build(const mcpplibs::cmdline::ParsedArgs& parsed) {
+    if (!parsed.is_flag_set("niulai") || parsed.is_flag_set("configure-only"))
+        return cmd_build_impl(parsed);
+
+    auto announce = [](bool succeeded) {
+        if (!mcpp::platform::niulai::announce(succeeded))
+            mcpp::ui::warning("niulai audio is unavailable: no supported player or speech engine found");
+    };
+    try {
+        int rc = cmd_build_impl(parsed);
+        announce(rc == 0);
+        return rc;
+    } catch (...) {
+        announce(false);
+        throw;
+    }
 }
 
 export int cmd_run(const mcpplibs::cmdline::ParsedArgs& parsed,

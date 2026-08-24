@@ -85,6 +85,7 @@ void print_usage() {
     std::println("  --quiet, -q                          Suppress status output");
     std::println("  --print-fingerprint                  Show toolchain fingerprint and 11 inputs");
     std::println("  --configure-only                     Generate CDB without compiling or linking");
+    std::println("  --niulai                             Play 妈妈 on success, 牛来 on failure");
     std::println("  --cache <MODE>                       Dependency cache: global (default) | local | off");
     std::println("  --no-cache                           Deprecated alias for --cache=off (clears the build dir)");
     std::println("  --no-color                           Disable colored output");
@@ -283,6 +284,8 @@ int run(int argc, char** argv) {
             .action(wrap_rc(cmd_new)))
         .subcommand(cl::App("build")
             .description("Build the current package")
+            .option(cl::Option("niulai")
+                .help("Play 妈妈 on success and 牛来 on failure"))
             .option(cl::Option("configure-only")
                 .help("Generate compile_commands.json without compiling or linking"))
             .option(cl::Option("print-fingerprint")
