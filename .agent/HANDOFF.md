@@ -1,56 +1,161 @@
 # 当前目标
 
-在 mcpp 核心工具链中提供可选的“牛来”编译结果原声通知：成功随机播放两段“妈妈”，失败播放“牛来”。
+在原生 Windows（不是 WSL）构建并实测牛来版 mcpp，确认嵌入式 MP3、PowerShell 播放、构建结果映射和临时文件清理均正常。
 
-# 当前状态
+# 测试基线
 
-开发态实现与验证均已完成，开发内容已提交并推送到 `helantianshen/mcpp` fork 的 `mcpp` 分支（实现提交 `093e826`）；音频授权确认和发布包资源注入按用户要求延后。
+- 仓库：`https://github.com/helantianshen/mcpp.git`
+- 分支：`mcpp`
+- 待测实现提交：`da15ced`
+- 必须在 Windows PowerShell 中运行；WSL → Windows 播放已经验证，不算本轮结果。
+- 最低基线为原生 Windows 上的 `x86_64-windows-gnu`；如果已安装 Visual Studio C++ 工作负载，再补测仓库默认的 LLVM/MSVC ABI 构建。
 
-# 已完成工作
+# 已完成实现
 
+- `build.mcpp` 将 `mama1.mp3`、`mama2.mp3`、`reply.mp3` 生成为 C++ 模块并链接进 mcpp，发布二进制不再依赖外置音频目录。
 - `mcpp build --niulai` 成功时随机播放 `mama1.mp3` / `mama2.mp3`，失败时播放 `reply.mp3`。
-- `--configure-only` 不播放；未传 `--niulai` 时行为不变；工作区构建只在最外层播放一次。
-- 播放器优先级：Windows MediaPlayer、macOS `afplay`、Linux `ffplay` / `mpv` / `mpg123`；WSL 可桥接 Windows MediaPlayer。
-- MP3 播放或资源查找失败时回退原有系统 TTS；通知失败不改变构建退出码。
-- 开发二进制从仓库 `assets/niulai/` 查找资源，并预留发布布局 `<安装根>/share/mcpp/niulai/`。
-- 三份上游音频已保存并在 `assets/niulai/NOTICE.md` 记录来源、哈希和授权待确认状态。
+- Windows 优先调用系统 `powershell.exe` 的 `System.Windows.Media.MediaPlayer`；失败后才尝试 `ffplay`，再失败则使用系统语音。
+- 音频写入随机临时文件，播放结束后自动删除；播放器执行上限为 5 秒。
+- `--niulai` 不改变原构建退出码，`--configure-only` 不播放。
 
-# 重要决策
+# Windows Codex 执行步骤
 
-- 功能只落在核心工具链，不修改 mcpp-vscode。
-- 使用显式 CLI 开关，默认关闭。
-- 不引入音频库，复用系统播放器和现有进程执行能力。
-- 当前不把 MP3 注入发布包；取得上游作者许可后再调整发布流程。
+## 1. 记录原生环境
 
-# 修改 / 重要文件
+```powershell
+Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture
+$PSVersionTable.PSVersion
+Get-Command powershell.exe
+mcpp --version
+mcpp self env
+```
 
-- `src/cli.cppm`
-- `src/cli/cmd_build.cppm`
-- `src/platform/niulai.cppm`
-- `tests/e2e/267_niulai_build_notification.sh`
-- `assets/niulai/{mama1.mp3,mama2.mp3,reply.mp3,NOTICE.md}`
+如果尚未安装用于自托管的发布版 mcpp，按仓库 README 的 Windows 安装方式执行；不要为播放功能额外安装 FFmpeg。
 
-# 验证情况
+## 2. 构建 Windows 原生产物
 
-- 通过：使用 mcpp 2026.8.11.2 引导器执行 `mcpp build --cache local`。
-- 通过：新二进制帮助显示 `--niulai` 的原声行为。
-- 通过：定向 E2E 覆盖成功随机妈妈文件、失败 reply 文件、`--configure-only` 静默。
-- 通过：新二进制完整执行 `mcpp test`，92 passed、0 failed。
-- 通过：`bash -n tests/e2e/267_niulai_build_notification.sh`。
-- 通过：本机 WSL 实际播放成功音频；空项目实际播放失败音频并保留退出码 2；Windows 临时 MP3 已清理。
+在仓库根目录执行：
 
-# 已知问题 / 风险
+```powershell
+mcpp build --target x86_64-windows-gnu
 
-- 上游 README 将牛来声音描述为电影“原声（已降噪）”。发布前必须向上游作者 whitefirer（公开昵称 MortyWang）确认再分发许可。
-- 当前发布工作流尚未把 MP3 放入 `<安装根>/share/mcpp/niulai/`，因此只有源码/开发构建可直接找到原声；缺少资源时会安全回退 TTS。
-- 已在 WSL + Windows MediaPlayer 实听；原生 Windows、macOS 和普通 Linux 播放器仍需对应平台验证。
-- 当前 PATH 中的 mcpp shim 指向不存在的 2026.8.17.1；本次直接使用已安装的 2026.8.11.2 引导器，未修改用户全局配置。
-- `origin` 保持指向 `mcpp-community/mcpp`；`fork` 指向 `helantianshen/mcpp`，本地 `mcpp` 跟踪 `fork/mcpp`。
+$Built = Get-ChildItem .\target -Recurse -Filter mcpp.exe |
+    Where-Object { $_.FullName -match '[\\/]bin[\\/]' } |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1
+if (-not $Built) { throw '没有找到新构建的 mcpp.exe' }
+& $Built.FullName --version
+```
 
-# 剩余工作
+将日志中的 resolved target/toolchain 和 `$Built.FullName` 记入测试结果。该 `.exe` 必须由 Windows 主机直接运行。
 
-发布前需要取得音频许可、将三份 MP3 注入各平台发布包，并补发布包内资源存在性冒烟测试。
+如果机器具备 Visual Studio C++ 工作负载，再执行一次 `mcpp build`，找到最新的 `mcpp.exe`，重复下述测试；如果不具备，只记录未测试，不要为此改系统环境。
+
+## 3. 在源码树外实听
+
+以下脚本创建独立临时工程，并复制待测 `.exe`，用于证明运行时不读取仓库里的 `assets/`：
+
+```powershell
+$TestRoot = Join-Path $env:TEMP ('mcpp-win-niulai-' + [guid]::NewGuid())
+$Project = Join-Path $TestRoot 'project'
+$Source = Join-Path $Project 'src'
+New-Item -ItemType Directory -Force $Source | Out-Null
+$Tool = Join-Path $TestRoot 'mcpp-niulai.exe'
+Copy-Item $Built.FullName $Tool
+
+[IO.File]::WriteAllText(
+    (Join-Path $Project 'mcpp.toml'),
+    "[package]`r`nname = `"niulai-win-smoke`"`r`nversion = `"0.1.0`"`r`n",
+    [Text.Encoding]::ASCII)
+[IO.File]::WriteAllText(
+    (Join-Path $Source 'main.c'),
+    "int main(void) { return 0; }`r`n",
+    [Text.Encoding]::ASCII)
+
+$Before = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase)
+Get-ChildItem $env:TEMP -Filter 'mcpp-niulai-*-*.mp3' -ErrorAction SilentlyContinue |
+    ForEach-Object { [void]$Before.Add($_.FullName) }
+
+Push-Location $Project
+try {
+    & $Tool build --target x86_64-windows-gnu --niulai
+    if ($LASTEXITCODE -ne 0) { throw '正常源码构建失败' }
+    # 此处应实际听到 mama1.mp3 或 mama2.mp3。
+
+    [IO.File]::WriteAllText(
+        (Join-Path $Source 'main.c'),
+        "int main(void) { this will not compile }`r`n",
+        [Text.Encoding]::ASCII)
+    & $Tool build --target x86_64-windows-gnu --niulai
+    if ($LASTEXITCODE -eq 0) { throw '错误源码意外构建成功' }
+    # 此处应实际听到 reply.mp3。
+
+    [IO.File]::WriteAllText(
+        (Join-Path $Source 'main.c'),
+        "int main(void) { return 0; }`r`n",
+        [Text.Encoding]::ASCII)
+    & $Tool build --target x86_64-windows-gnu
+    if ($LASTEXITCODE -ne 0) { throw '无 --niulai 的构建失败' }
+    # 此处应保持静默。
+
+    & $Tool build --target x86_64-windows-gnu --niulai --configure-only
+    if ($LASTEXITCODE -ne 0) { throw 'configure-only 失败' }
+    # 此处也应保持静默。
+}
+finally {
+    Pop-Location
+}
+
+$Leaked = @(Get-ChildItem $env:TEMP -Filter 'mcpp-niulai-*-*.mp3' -ErrorAction SilentlyContinue |
+    Where-Object { -not $Before.Contains($_.FullName) })
+if ($Leaked) {
+    $Leaked | Select-Object FullName, Length, LastWriteTime
+    throw '检测到未清理的牛来临时 MP3'
+}
+```
+
+不要只凭命令返回成功判断音频通过；请让现场用户确认两次实听内容。
+
+## 4. 失败时收集证据
+
+先保留完整输出，不要立即修改实现或安装播放器：
+
+```powershell
+$env:MCPP_LOG_LEVEL = 'debug'
+Get-Command powershell.exe | Format-List *
+Add-Type -AssemblyName PresentationCore
+Test-Path $env:TEMP
+& $Tool build --target x86_64-windows-gnu --niulai
+Remove-Item Env:MCPP_LOG_LEVEL
+```
+
+区分以下阶段：Windows 原生 mcpp 编译失败、临时 MP3 无法写入、`PresentationCore`/`MediaPlayer` 失败、播放超时、声音设备无输出。记录原始报错和退出码后再判断是否需要改代码。
+
+# 验收结果模板
+
+```text
+Windows 版本 / 架构：
+PowerShell 版本：
+bootstrap mcpp 版本：
+待测 mcpp.exe 路径：
+target / toolchain：
+Windows 原生构建：通过 / 失败
+成功构建：退出码 0；听到 mama1/mama2：是 / 否
+失败构建：退出码非 0；听到 reply：是 / 否
+无 --niulai：静默 / 异常
+--configure-only：静默 / 异常
+临时 MP3：无泄漏 / 泄漏路径
+完整警告或错误：
+```
+
+# 已有验证与风险
+
+- Linux glibc、Linux musl 静态构建、定向 E2E 和完整 `mcpp test` 均已通过；完整测试结果为 92 passed、0 failed。
+- WSL 调用 Windows PowerShell `MediaPlayer` 已实际播放成功，但尚未验证 Windows 原生编译出的 `mcpp.exe`。
+- 当前 shell E2E 在 Windows 会跳过，因此本轮必须按上面的 PowerShell 流程验证。
+- 音频来自 whitefirer（MortyWang）的 `dsh-niulai-pet`；公开发布前仍需取得再分发许可。
 
 # 推荐下一步
 
-审阅 `https://github.com/helantianshen/mcpp/tree/mcpp`；不要在未获单独授权时创建 PR。准备发布时联系 https://github.com/whitefirer，然后完善 release 打包与各平台实听。
+Windows Codex 只执行并报告上述测试。若失败，先提交环境、命令、退出码和完整日志；不要在没有复现结论时扩大修改范围。
