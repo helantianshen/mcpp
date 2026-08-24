@@ -5,6 +5,7 @@
 module;
 
 #if defined(_WIN32)
+#  include <cstdlib> // Must precede windows.h for MinGW import-std linkage.
 #  ifndef NOMINMAX
 #    define NOMINMAX
 #  endif

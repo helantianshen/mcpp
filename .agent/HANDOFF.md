@@ -1,161 +1,110 @@
 # 当前目标
 
-在原生 Windows（不是 WSL）构建并实测牛来版 mcpp，确认嵌入式 MP3、PowerShell 播放、构建结果映射和临时文件清理均正常。
+让牛来版 mcpp 在 Windows GNU 路径通过构建，并由 Windows 原生 Codex 复验编译、链接和音频行为。
 
-# 测试基线
+# 当前状态
 
-- 仓库：`https://github.com/helantianshen/mcpp.git`
-- 分支：`mcpp`
-- 待测实现提交：`da15ced`
-- 必须在 Windows PowerShell 中运行；WSL → Windows 播放已经验证，不算本轮结果。
-- 最低基线为原生 Windows 上的 `x86_64-windows-gnu`；如果已安装 Visual Studio C++ 工作负载，再补测仓库默认的 LLVM/MSVC ABI 构建。
+- Windows 原生 MSVC 构建与牛来实听已经通过。
+- 原生 MinGW GCC 16.1.0 日志中的 `conflicting language linkage` 已按实证方案修复，等待原生复验。
+- WSL 的 Linux → Windows GNU 全量交叉构建已证明原失败模块全部编译成功，但链接阶段暴露新的多重定义问题；因此 GNU 发布基线仍未通过。
+- 修复及本交接文档位于 `helantianshen/mcpp` 的 `mcpp` 分支；Windows Codex 应测试该分支最新 HEAD。
 
-# 已完成实现
+# 已实施修复
 
-- `build.mcpp` 将 `mama1.mp3`、`mama2.mp3`、`reply.mp3` 生成为 C++ 模块并链接进 mcpp，发布二进制不再依赖外置音频目录。
-- `mcpp build --niulai` 成功时随机播放 `mama1.mp3` / `mama2.mp3`，失败时播放 `reply.mp3`。
-- Windows 优先调用系统 `powershell.exe` 的 `System.Windows.Media.MediaPlayer`；失败后才尝试 `ffplay`，再失败则使用系统语音。
-- 音频写入随机临时文件，播放结束后自动删除；播放器执行上限为 5 秒。
-- `--niulai` 不改变原构建退出码，`--configure-only` 不播放。
+以下三个模块都在全局模块片段的 `windows.h` 前预包含 `<cstdlib>`：
 
-# Windows Codex 执行步骤
+- `src/platform/windows/bounded_process.cppm`
+- `src/platform/scaffold_fs.cppm`
+- `src/build/schedule/detach_codegen.cppm`
 
-## 1. 记录原生环境
+MinGW 的 `winnt.h` 会在 `extern "C"` 中经 `x86intrin.h` 间接进入 libstdc++ 的 `cstdlib`。预先以正常 C++ linkage 包含 `<cstdlib>`，可避免随后 `import std` 时产生 linkage 冲突。每一行都带有顺序约束注释，不应作为“未使用 include”删除。
 
-```powershell
-Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture
-$PSVersionTable.PSVersion
-Get-Command powershell.exe
-mcpp --version
-mcpp self env
-```
+# 已有验证
 
-如果尚未安装用于自托管的发布版 mcpp，按仓库 README 的 Windows 安装方式执行；不要为播放功能额外安装 FFmpeg。
+- 原始 Windows 日志：`.agent/logs/windows-gnu-build-error-da15ced.log`。
+- 同一 Windows 原生 GCC 16.1.0 最小探针：原写法退出码 1；`windows.h` 前加入 `<cstdlib>` 后退出码 0。
+- WSL 执行：
 
-## 2. 构建 Windows 原生产物
+  ```text
+  mcpp build --target x86_64-windows-gnu --cache local
+  ```
 
-在仓库根目录执行：
+  三个原失败目标的对象和 GCM 均已生成，原 linkage 错误未再出现：
 
-```powershell
-mcpp build --target x86_64-windows-gnu
+  ```text
+  obj/mcpp/src/platform/windows/bounded_process.m.o
+  obj/scaffold_fs.m.o
+  obj/detach_codegen.m.o
+  gcm.cache/mcpp.platform.windows.bounded_process.gcm
+  gcm.cache/mcpp.platform.scaffold_fs.gcm
+  gcm.cache/mcpp.build.schedule.detach_codegen.gcm
+  ```
 
-$Built = Get-ChildItem .\target -Recurse -Filter mcpp.exe |
-    Where-Object { $_.FullName -match '[\\/]bin[\\/]' } |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1
-if (-not $Built) { throw '没有找到新构建的 mcpp.exe' }
-& $Built.FullName --version
-```
+- 该交叉构建最终在链接 `bin/mcpp.exe` 时失败，第一类错误为：
 
-将日志中的 resolved target/toolchain 和 `$Built.FullName` 记入测试结果。该 `.exe` 必须由 Windows 主机直接运行。
+  ```text
+  multiple definition of `std::_Sp_make_shared_tag::_S_ti()::__tag'
+  multiple definition of nlohmann serializer/dtoa static data
+  ```
 
-如果机器具备 Visual Studio C++ 工作负载，再执行一次 `mcpp build`，找到最新的 `mcpp.exe`，重复下述测试；如果不具备，只记录未测试，不要为此改系统环境。
+  这与本次三处 `windows.h` include 顺序不同，是后续独立阻塞。原生 MinGW 是否同样出现，必须由本轮 Windows 复验确认。
 
-## 3. 在源码树外实听
+# Windows Codex 复验步骤
 
-以下脚本创建独立临时工程，并复制待测 `.exe`，用于证明运行时不读取仓库里的 `assets/`：
+必须使用原生 Windows PowerShell，不得用 WSL 结果代替。请在全新工作树或全新的 `target/x86_64-windows-gnu` 中测试，避免复用 `da15ced` 的失败 BMI。
 
-```powershell
-$TestRoot = Join-Path $env:TEMP ('mcpp-win-niulai-' + [guid]::NewGuid())
-$Project = Join-Path $TestRoot 'project'
-$Source = Join-Path $Project 'src'
-New-Item -ItemType Directory -Force $Source | Out-Null
-$Tool = Join-Path $TestRoot 'mcpp-niulai.exe'
-Copy-Item $Built.FullName $Tool
-
-[IO.File]::WriteAllText(
-    (Join-Path $Project 'mcpp.toml'),
-    "[package]`r`nname = `"niulai-win-smoke`"`r`nversion = `"0.1.0`"`r`n",
-    [Text.Encoding]::ASCII)
-[IO.File]::WriteAllText(
-    (Join-Path $Source 'main.c'),
-    "int main(void) { return 0; }`r`n",
-    [Text.Encoding]::ASCII)
-
-$Before = [Collections.Generic.HashSet[string]]::new(
-    [StringComparer]::OrdinalIgnoreCase)
-Get-ChildItem $env:TEMP -Filter 'mcpp-niulai-*-*.mp3' -ErrorAction SilentlyContinue |
-    ForEach-Object { [void]$Before.Add($_.FullName) }
-
-Push-Location $Project
-try {
-    & $Tool build --target x86_64-windows-gnu --niulai
-    if ($LASTEXITCODE -ne 0) { throw '正常源码构建失败' }
-    # 此处应实际听到 mama1.mp3 或 mama2.mp3。
-
-    [IO.File]::WriteAllText(
-        (Join-Path $Source 'main.c'),
-        "int main(void) { this will not compile }`r`n",
-        [Text.Encoding]::ASCII)
-    & $Tool build --target x86_64-windows-gnu --niulai
-    if ($LASTEXITCODE -eq 0) { throw '错误源码意外构建成功' }
-    # 此处应实际听到 reply.mp3。
-
-    [IO.File]::WriteAllText(
-        (Join-Path $Source 'main.c'),
-        "int main(void) { return 0; }`r`n",
-        [Text.Encoding]::ASCII)
-    & $Tool build --target x86_64-windows-gnu
-    if ($LASTEXITCODE -ne 0) { throw '无 --niulai 的构建失败' }
-    # 此处应保持静默。
-
-    & $Tool build --target x86_64-windows-gnu --niulai --configure-only
-    if ($LASTEXITCODE -ne 0) { throw 'configure-only 失败' }
-    # 此处也应保持静默。
-}
-finally {
-    Pop-Location
-}
-
-$Leaked = @(Get-ChildItem $env:TEMP -Filter 'mcpp-niulai-*-*.mp3' -ErrorAction SilentlyContinue |
-    Where-Object { -not $Before.Contains($_.FullName) })
-if ($Leaked) {
-    $Leaked | Select-Object FullName, Length, LastWriteTime
-    throw '检测到未清理的牛来临时 MP3'
-}
-```
-
-不要只凭命令返回成功判断音频通过；请让现场用户确认两次实听内容。
-
-## 4. 失败时收集证据
-
-先保留完整输出，不要立即修改实现或安装播放器：
+## 1. 构建并保存日志
 
 ```powershell
 $env:MCPP_LOG_LEVEL = 'debug'
-Get-Command powershell.exe | Format-List *
-Add-Type -AssemblyName PresentationCore
-Test-Path $env:TEMP
-& $Tool build --target x86_64-windows-gnu --niulai
-Remove-Item Env:MCPP_LOG_LEVEL
+mcpp build --target x86_64-windows-gnu 2>&1 |
+    Tee-Object windows-gnu-build-after-cstdlib.log
+$BuildExit = $LASTEXITCODE
+"build exit: $BuildExit"
 ```
 
-区分以下阶段：Windows 原生 mcpp 编译失败、临时 MP3 无法写入、`PresentationCore`/`MediaPlayer` 失败、播放超时、声音设备无输出。记录原始报错和退出码后再判断是否需要改代码。
-
-# 验收结果模板
+先检查日志中是否还存在：
 
 ```text
-Windows 版本 / 架构：
-PowerShell 版本：
-bootstrap mcpp 版本：
-待测 mcpp.exe 路径：
-target / toolchain：
-Windows 原生构建：通过 / 失败
-成功构建：退出码 0；听到 mama1/mama2：是 / 否
-失败构建：退出码非 0；听到 reply：是 / 否
-无 --niulai：静默 / 异常
---configure-only：静默 / 异常
-临时 MP3：无泄漏 / 泄漏路径
-完整警告或错误：
+conflicting language linkage for imported declaration
 ```
 
-# 已有验证与风险
+如果仍存在，报告第一处完整 include chain。如果已消失但出现 `multiple definition`，保存完整链接日志并停止扩大修改；这表示本轮 include 修复有效，但 GNU 分支还有第二个发布阻塞。
 
-- Linux glibc、Linux musl 静态构建、定向 E2E 和完整 `mcpp test` 均已通过；完整测试结果为 92 passed、0 failed。
-- WSL 调用 Windows PowerShell `MediaPlayer` 已实际播放成功，但尚未验证 Windows 原生编译出的 `mcpp.exe`。
-- 当前 shell E2E 在 Windows 会跳过，因此本轮必须按上面的 PowerShell 流程验证。
-- 音频来自 whitefirer（MortyWang）的 `dsh-niulai-pet`；公开发布前仍需取得再分发许可。
+## 2. 只有链接成功后才实听
+
+找到本轮新生成的 `mcpp.exe`，复制到源码树外，再执行：
+
+- 正常 C/C++ 工程：`mcpp.exe build --target x86_64-windows-gnu --niulai`，退出码应为 0，并听到 `mama1.mp3` 或 `mama2.mp3`。
+- 制造编译错误后执行同一命令，退出码应非 0，并听到 `reply.mp3`。
+- 不传 `--niulai` 时应静默。
+- `--niulai --configure-only` 应静默。
+- 命令结束后 `%TEMP%` 不应新增 `mcpp-niulai-*-*.mp3`。
+
+# 结果回传模板
+
+```text
+测试分支与 HEAD：
+Windows / PowerShell：
+bootstrap mcpp：
+MinGW GCC：
+完整构建退出码：
+原 conflicting language linkage：已消失 / 仍存在
+是否出现 multiple definition：
+新 mcpp.exe 路径：
+成功音频：
+失败音频：
+静默场景：
+临时 MP3：
+日志路径：
+```
+
+# 次要观察与风险
+
+- bootstrap mcpp 2026.8.11.3 不认识当前 manifest 的 `bmi_schedule`，该 warning 不是原 linkage 失败原因。
+- `build.mcpp running` 后曾出现 `The system cannot find the path specified.`，但牛来生成模块和对象已成功产出；构建主阻塞解决后若仍出现再单独调查。
+- 发布前仍需取得 whitefirer（MortyWang）的音频再分发许可。
 
 # 推荐下一步
 
-Windows Codex 只执行并报告上述测试。若失败，先提交环境、命令、退出码和完整日志；不要在没有复现结论时扩大修改范围。
+Windows Codex 先完成原生 GNU 复验并回传新日志。若 linkage 错误消失但链接多重定义复现，再把 ODR 链接问题作为单独根因处理。

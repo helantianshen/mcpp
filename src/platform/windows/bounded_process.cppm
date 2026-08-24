@@ -48,6 +48,7 @@
 module;
 
 #if defined(_WIN32)
+#include <cstdlib> // Must precede windows.h for MinGW import-std linkage.
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif

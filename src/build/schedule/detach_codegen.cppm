@@ -69,6 +69,7 @@ module;
 // #include. These were briefly written after `module :private;`, which GCC
 // rejects with the unhelpful "module already declared".
 #if defined(_WIN32)
+#include <cstdlib> // Must precede windows.h for MinGW import-std linkage.
 #include <windows.h>
 #else
 #include <fcntl.h>

@@ -1,0 +1,141 @@
+Windows GNU native build failure log
+====================================
+
+Captured at: 2026-08-24T23:28:13.9483615+08:00
+Repository: https://github.com/helantianshen/mcpp.git
+Test worktree: E:\CPPCodes\mcpp-win-handoff-da15ced
+Commit: da15ced1e08e15770172e84260b467f5bae145b9
+Operating system: Microsoft Windows 11 Home, 10.0.26200, x86_64
+PowerShell: 7.6.4 Core
+Bootstrap mcpp: 2026.8.11.3
+Target: x86_64-windows-gnu
+Resolved toolchain: GCC 16.1.0 (x86_64-w64-mingw32)
+Compiler: C:\Users\80945\.mcpp\registry\data\xpkgs\xim-x-mingw-gcc\16.1.0\bin\g++.exe
+Actual build exit code: 1
+Fresh target GNU mcpp.exe count: 0
+
+Command
+-------
+
+$env:MCPP_LOG_LEVEL = 'debug'
+& 'E:\xlings\.xlings\data\xpkgs\xim-x-mcpp\2026.8.11.3\bin\mcpp.exe' build --target x86_64-windows-gnu
+
+Complete stdout/stderr
+----------------------
+
+warning: [build] has unsupported key 'bmi_schedule' (ignored). Supported keys: sources, module_extensions, cflags, cxxflags, ldflags, defines, flags, include_dirs, include_dirs_after, dialect_cxxflags, c_standard, target, static_stdlib, cxx_runtime, allow_host_libs, cache, profile, build_program_timeout, macos_deployment_target.
+   Resolving toolchain
+    Resolved gcc@16.1.0 → x86_64-windows-gnu → @mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/bin/g++.exe
+    Resolved host toolchain for build.mcpp: gcc 16.1.0 (x86_64-w64-mingw32)
+  build.mcpp compiling
+  build.mcpp running
+The system cannot find the path specified.
+    Inferred sources [src/**/*.{cppm,cpp,cc,c,S,s,asm}]
+    Inferred target mcpp (bin from src/main.cpp)
+   Compiling mcpp v2026.8.21.3 (.)
+   Compiling mcpplibs.cmdline v0.0.1
+warning: this toolchain and platform combination emits no GNU depfile
+  impact: editing a file #include'd inside a module interface purview (or a header pulled into a .cpp) will not trigger a rebuild, so the build may reuse a stale BMI or object
+  hint: touch the including .cppm/.cpp after editing such a file
+error: build failed
+failed: obj/mcpp/src/platform/windows/bounded_process.m.o gcm.cache/mcpp.platform.windows.bounded_process.gcm
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/bin/g++.exe @obj/mcpp/src/platform/windows/bounded_process.m.o.rsp -std=c++23 -fmodules -O2 "-IE:\CPPCodes\mcpp-win-handoff-da15ced\src\libs\json"  -x c++ -c E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/windows/bounded_process.cppm -o obj/mcpp/src/platform/windows/bounded_process.m.o
+In file included from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/cctype:46,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/stdc++.h:33,
+                 from C:\Users\80945\.mcpp\registry\data\xpkgs\xim-x-mingw-gcc\16.1.0\include\c++\16.1.0\bits\std.cc:26,
+of module std, imported at E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/windows/bounded_process.cppm:62:
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:588:3: error: conflicting language linkage for imported declaration 'constexpr bool std::__is_constant_evaluated()'
+  588 |   __is_constant_evaluated() _GLIBCXX_NOEXCEPT
+      |   ^~~~~~~~~~~~~~~~~~~~~~~
+In file included from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/cstdlib:46,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/stdlib.h:36,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/mm_malloc.h:27,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/xmmintrin.h:34,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/immintrin.h:31,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/x86intrin.h:32,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/winnt.h:1703,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/minwindef.h:163,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/windef.h:9,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/windows.h:69,
+                 from E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/windows/bounded_process.cppm:57:
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:588:3: note: existing declaration 'constexpr bool std::__is_constant_evaluated()'
+  588 |   __is_constant_evaluated() _GLIBCXX_NOEXCEPT
+      |   ^~~~~~~~~~~~~~~~~~~~~~~
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:658:3: error: conflicting language linkage for imported declaration 'void std::__glibcxx_assert_fail()'
+  658 |   __glibcxx_assert_fail()
+      |   ^~~~~~~~~~~~~~~~~~~~~
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:658:3: note: existing declaration 'void std::__glibcxx_assert_fail()'
+  658 |   __glibcxx_assert_fail()
+      |   ^~~~~~~~~~~~~~~~~~~~~
+E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/windows/bounded_process.cppm:114:6: note: during load of binding 'std::string@std'
+  114 | std::string environment_block(const char* const* envEntries,
+      |      ^~~~~~
+failed: obj/scaffold_fs.m.o gcm.cache/mcpp.platform.scaffold_fs.gcm
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/bin/g++.exe @obj/scaffold_fs.m.o.rsp -std=c++23 -fmodules -O2 "-IE:\CPPCodes\mcpp-win-handoff-da15ced\src\libs\json"  -x c++ -c E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/scaffold_fs.cppm -o obj/scaffold_fs.m.o
+In file included from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/cctype:46,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/stdc++.h:33,
+                 from C:\Users\80945\.mcpp\registry\data\xpkgs\xim-x-mingw-gcc\16.1.0\include\c++\16.1.0\bits\std.cc:26,
+of module std, imported at E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/scaffold_fs.cppm:31:
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:588:3: error: conflicting language linkage for imported declaration 'constexpr bool std::__is_constant_evaluated()'
+  588 |   __is_constant_evaluated() _GLIBCXX_NOEXCEPT
+      |   ^~~~~~~~~~~~~~~~~~~~~~~
+In file included from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/cstdlib:46,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/stdlib.h:36,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/mm_malloc.h:27,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/xmmintrin.h:34,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/immintrin.h:31,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/x86intrin.h:32,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/winnt.h:1703,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/minwindef.h:163,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/windef.h:9,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/windows.h:69,
+                 from E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/scaffold_fs.cppm:11:
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:588:3: note: existing declaration 'constexpr bool std::__is_constant_evaluated()'
+  588 |   __is_constant_evaluated() _GLIBCXX_NOEXCEPT
+      |   ^~~~~~~~~~~~~~~~~~~~~~~
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:658:3: error: conflicting language linkage for imported declaration 'void std::__glibcxx_assert_fail()'
+  658 |   __glibcxx_assert_fail()
+      |   ^~~~~~~~~~~~~~~~~~~~~
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:658:3: note: existing declaration 'void std::__glibcxx_assert_fail()'
+  658 |   __glibcxx_assert_fail()
+      |   ^~~~~~~~~~~~~~~~~~~~~
+E:/CPPCodes/mcpp-win-handoff-da15ced/src/platform/scaffold_fs.cppm:36:6: note: during load of binding 'std::string@std'
+   36 | std::string win32_message(DWORD code) {
+      |      ^~~~~~
+failed: obj/detach_codegen.m.o gcm.cache/mcpp.build.schedule.detach_codegen.gcm
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/bin/g++.exe @obj/detach_codegen.m.o.rsp -std=c++23 -fmodules -O2 "-IE:\CPPCodes\mcpp-win-handoff-da15ced\src\libs\json"  -x c++ -c E:/CPPCodes/mcpp-win-handoff-da15ced/src/build/schedule/detach_codegen.cppm -o obj/detach_codegen.m.o
+In file included from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/cctype:46,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/stdc++.h:33,
+                 from C:\Users\80945\.mcpp\registry\data\xpkgs\xim-x-mingw-gcc\16.1.0\include\c++\16.1.0\bits\std.cc:26,
+of module std, imported at E:/CPPCodes/mcpp-win-handoff-da15ced/src/build/schedule/detach_codegen.cppm:83:
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:588:3: error: conflicting language linkage for imported declaration 'constexpr bool std::__is_constant_evaluated()'
+  588 |   __is_constant_evaluated() _GLIBCXX_NOEXCEPT
+      |   ^~~~~~~~~~~~~~~~~~~~~~~
+In file included from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/cstdlib:46,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/stdlib.h:36,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/mm_malloc.h:27,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/xmmintrin.h:34,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/immintrin.h:31,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/lib/gcc/x86_64-w64-mingw32/16.1.0/include/x86intrin.h:32,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/winnt.h:1703,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/minwindef.h:163,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/windef.h:9,
+                 from C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/x86_64-w64-mingw32/include/windows.h:69,
+                 from E:/CPPCodes/mcpp-win-handoff-da15ced/src/build/schedule/detach_codegen.cppm:72:
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:588:3: note: existing declaration 'constexpr bool std::__is_constant_evaluated()'
+  588 |   __is_constant_evaluated() _GLIBCXX_NOEXCEPT
+      |   ^~~~~~~~~~~~~~~~~~~~~~~
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:658:3: error: conflicting language linkage for imported declaration 'void std::__glibcxx_assert_fail()'
+  658 |   __glibcxx_assert_fail()
+      |   ^~~~~~~~~~~~~~~~~~~~~
+C:/Users/80945/.mcpp/registry/data/xpkgs/xim-x-mingw-gcc/16.1.0/include/c++/16.1.0/x86_64-w64-mingw32/bits/c++config.h:658:3: note: existing declaration 'void std::__glibcxx_assert_fail()'
+  658 |   __glibcxx_assert_fail()
+      |   ^~~~~~~~~~~~~~~~~~~~~
+E:/CPPCodes/mcpp-win-handoff-da15ced/src/build/schedule/detach_codegen.cppm:91:22: note: during load of binding 'std::filesystem::path@std'
+   91 |     std::filesystem::path bmi;
+      |                      ^~~~
+
+Captured result
+---------------
+
+{"ExitCode":1,"FinishedAt":"2026-08-24T23:28:13.9483615+08:00","Commit":"da15ced1e08e15770172e84260b467f5bae145b9","FreshExeCount":0}
